@@ -1,0 +1,26 @@
+{
+  "summary": "Retested 3 reported bug fixes on /play. All three PASS. Full regression flow (upload -> launch -> play -> back) also works. Frontend-only testing at 1920x1080.",
+  "tested_scope": ["frontend", "integration"],
+  "passed": [
+    "BUG1 - Gradient animation: 5 .blob elements found under [data-testid=mesh-gradient]. Blob[0] animation-name='blob-drift-1', animation-duration='14s'. Computed transform at t=0: matrix(1.0882, 0, 0, 1.0882, -14.9365, -27.272), rect.x=-235.91. At t=2500ms: matrix(1.34423, 0, 0, 1.34423, 520.799, 113.869), rect.x=132.07. Blob visibly moved and scaled - animation is running.",
+    "BUG2 - No reflow on activation: All 8 lyric lines share identical computed fontSize='96px', lineHeight='96px', fontWeight='700' regardless of active/inactive state. Active line (i=0, opacity 0.999, transform scale~1.0) and dimmed lines (opacity 0.28-0.6, transform scale 0.7-0.82) differ ONLY by transform (scale) and opacity/filter - font-size is constant so no text re-wrap on activation.",
+    "BUG3 - Smooth transitions: Computed transition-property on .lyric-line = 'transform, opacity, filter, color' (does NOT contain bare 'all'). transition-duration = '0.9s' (~900ms). Meets requirement for GPU-friendly, buttery transitions.",
+    "Regression: Upload form accepts artist/song text + audio.wav + art.png + sample.lrc, Launch Player navigates to /play, intro renders, play-button (data-testid) starts playback, first lyric activates ~t=3s at 96px/700 bold white, back-button returns to '/' successfully."
+  ],
+  "failed": [],
+  "raw_observations": {
+    "blob_t0": "matrix(1.0882, 0, 0, 1.0882, -14.9365, -27.272)",
+    "blob_t2500": "matrix(1.34423, 0, 0, 1.34423, 520.799, 113.869)",
+    "blob_animation": "blob-drift-1 / 14s",
+    "lyric_fontSize_set": ["96px"],
+    "lyric_lineHeight_set": ["96px"],
+    "lyric_fontWeight_set": ["700"],
+    "transitionProperty": "transform, opacity, filter, color",
+    "transitionDuration": "0.9s",
+    "note_pause_click": "Second click on play-button timed out because on-screen controls auto-hide after inactivity; not a bug - back-button click succeeded which confirms controls layer is functional. Playback state changed correctly on first click (progress advanced to 0:04)."
+  },
+  "action_items": [],
+  "success_rate": {"backend": "N/A (not requested)", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true
+}

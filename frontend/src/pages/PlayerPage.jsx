@@ -196,28 +196,45 @@ export default function PlayerPage({ session, onBack }) {
             className="w-full h-full overflow-y-auto no-scrollbar lyric-mask px-[6%]"
             style={{ scrollBehavior: "smooth" }}
           >
-            <div className="py-[45%] flex flex-col gap-8">
+            <div className="py-[45%] flex flex-col gap-6">
               {lyrics.map((line, i) => {
                 const isActive = i === activeIndex;
-                const isNear = Math.abs(i - activeIndex) <= 1;
+                const dist = activeIndex < 0 ? 99 : Math.abs(i - activeIndex);
                 const isPast = i < activeIndex;
+
+                // Scale-only sizing — font-size is constant so wrapping never changes
+                let scale = 0.7;
+                let opacity = 0.28;
+                let blurPx = 1.2;
+                if (isActive) {
+                  scale = 1;
+                  opacity = 1;
+                  blurPx = 0;
+                } else if (dist === 1) {
+                  scale = 0.82;
+                  opacity = 0.6;
+                  blurPx = 0.4;
+                } else if (dist === 2) {
+                  scale = 0.74;
+                  opacity = 0.42;
+                  blurPx = 0.8;
+                }
+                if (isPast && !isActive) opacity = Math.min(opacity, 0.28);
+
                 return (
                   <div
                     key={i}
                     ref={(el) => (lineRefs.current[i] = el)}
                     data-testid={isActive ? "lyric-line-active" : "lyric-line"}
-                    className={`transition-all duration-700 ease-out will-change-transform origin-left break-words leading-[1.05] tracking-tight ${
-                      isActive
-                        ? "text-white text-6xl md:text-7xl lg:text-8xl font-bold opacity-100 scale-100"
-                        : isNear
-                          ? "text-white/80 text-4xl md:text-5xl lg:text-6xl font-bold opacity-70 scale-[0.98]"
-                          : "text-white/50 text-3xl md:text-4xl lg:text-5xl font-bold opacity-40 scale-[0.94]"
-                    } ${isPast && !isActive ? "opacity-30" : ""} ${
+                    className={`lyric-line text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.05] tracking-tight break-words ${
                       !line.text ? "h-4" : ""
                     }`}
                     style={{
+                      transform: `scale(${scale})`,
+                      opacity,
+                      filter: blurPx ? `blur(${blurPx}px)` : "none",
                       textShadow: isActive
-                        ? "0 8px 40px rgba(0,0,0,0.4)"
+                        ? "0 8px 40px rgba(0,0,0,0.45)"
                         : "none",
                     }}
                   >
