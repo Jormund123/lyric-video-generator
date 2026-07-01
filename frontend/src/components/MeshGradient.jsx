@@ -16,10 +16,13 @@ export const MeshGradient = ({ colors }) => {
       className="absolute inset-0 overflow-hidden"
       data-testid="mesh-gradient"
     >
-      {/* solid base color to prevent black flash */}
+      {/* Base layer: three-stop linear gradient from album art palette */}
       <div
         className="absolute inset-0"
-        style={{ backgroundColor: palette[0], opacity: 0.35 }}
+        style={{
+          background: `linear-gradient(135deg, ${palette[0]} 0%, ${palette[1]} 55%, ${palette[2]} 100%)`,
+          opacity: 0.42,
+        }}
       />
       <div
         className="blob blob-1"
@@ -78,7 +81,7 @@ export const MeshGradient = ({ colors }) => {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(0,0,0,0.0) 30%, rgba(0,0,0,0.55) 100%)",
+            "radial-gradient(ellipse at center, rgba(0,0,0,0.0) 45%, rgba(0,0,0,0.35) 100%)",
         }}
       />
     </div>

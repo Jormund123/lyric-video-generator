@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Play, Pause, ArrowLeft, Maximize2 } from "lucide-react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { Play, Pause, ArrowLeft, Maximize2, Download, Circle, Square } from "lucide-react";
+import { toast } from "sonner";
 import MeshGradient from "@/components/MeshGradient";
 import { extractColors } from "@/lib/colorExtractor";
 
@@ -10,12 +11,17 @@ export default function PlayerPage({ session, onBack }) {
   const lyricsRef = useRef(null);
   const lineRefs = useRef([]);
   const canvasRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const audioDestRef = useRef(null);
+  const recorderRef = useRef(null);
+  const displayStreamRef = useRef(null);
 
   const [colors, setColors] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [duration, setDuration] = useState(0);
+  const [recording, setRecording] = useState(false);
 
   const firstLyricTime = useMemo(
     () => (lyrics.length > 0 ? lyrics[0].time : 0),
@@ -128,6 +134,138 @@ export default function PlayerPage({ session, onBack }) {
     a.currentTime = pct * duration;
   };
 
+  // Set up audio graph so we can capture the audio stream for recording
+  const ensureAudioCapture = useCallback(() => {
+    if (audioDestRef.current) return audioDestRef.current;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC || !audioRef.current) return null;
+    const ctx = new AC();
+    const source = ctx.createMediaElementSource(audioRef.current);
+    const dest = ctx.createMediaStreamDestination();
+    source.connect(dest);
+    source.connect(ctx.destination); // still play through speakers
+    audioCtxRef.current = ctx;
+    audioDestRef.current = dest;
+    return dest;
+  }, []);
+
+  const pickMimeType = () => {
+    const candidates = [
+      "video/mp4;codecs=avc1,mp4a.40.2",
+      "video/mp4",
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm",
+    ];
+    for (const m of candidates) {
+      if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m)) {
+        return m;
+      }
+    }
+    return "";
+  };
+
+  const startRecording = async () => {
+    if (recording) return;
+    if (!audioRef.current) return;
+    if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getDisplayMedia) {
+      toast.error("Recording not supported in this browser. Try Chrome/Edge.");
+      return;
+    }
+    try {
+      // Start audio from beginning + play
+      const a = audioRef.current;
+      a.currentTime = 0;
+      const dest = ensureAudioCapture();
+      if (!dest) {
+        toast.error("Audio capture not available");
+        return;
+      }
+      toast.info("Choose the browser tab showing this player to record", {
+        duration: 4000,
+      });
+      const display = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 60 },
+        audio: false,
+        preferCurrentTab: true,
+      });
+      displayStreamRef.current = display;
+      const combined = new MediaStream([
+        ...display.getVideoTracks(),
+        ...dest.stream.getAudioTracks(),
+      ]);
+      const mime = pickMimeType();
+      const rec = new MediaRecorder(combined, {
+        mimeType: mime || undefined,
+        videoBitsPerSecond: 8_000_000,
+        audioBitsPerSecond: 192_000,
+      });
+      const chunks = [];
+      rec.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+      rec.onstop = () => {
+        const blob = new Blob(chunks, { type: mime || "video/webm" });
+        const url = URL.createObjectURL(blob);
+        const ext = mime.includes("mp4") ? "mp4" : "webm";
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${song || "lyric-video"}-${artist || "artist"}.${ext}`.replace(
+          /[^\w.\-]+/g,
+          "_",
+        );
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        display.getTracks().forEach((t) => t.stop());
+        displayStreamRef.current = null;
+        setRecording(false);
+        toast.success(`Downloaded as .${ext}`);
+      };
+      // If user stops sharing from browser UI
+      display.getVideoTracks()[0].addEventListener("ended", () => {
+        if (rec.state !== "inactive") rec.stop();
+      });
+      // Auto stop when audio ends
+      const onEnded = () => {
+        if (rec.state !== "inactive") rec.stop();
+        a.removeEventListener("ended", onEnded);
+      };
+      a.addEventListener("ended", onEnded);
+      recorderRef.current = rec;
+      rec.start(200);
+      setRecording(true);
+      await a.play();
+      toast.success("Recording... play through until the song ends");
+    } catch (err) {
+      console.error(err);
+      if (err?.name !== "NotAllowedError") {
+        toast.error("Could not start recording");
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    const rec = recorderRef.current;
+    if (rec && rec.state !== "inactive") rec.stop();
+  };
+
+  useEffect(() => {
+    return () => {
+      // Cleanup on unmount
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
+        recorderRef.current.stop();
+      }
+      if (displayStreamRef.current) {
+        displayStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => {});
+      }
+    };
+  }, []);
+
   const showIntro = activeIndex < 0;
 
   const fmt = (s) => {
@@ -154,8 +292,8 @@ export default function PlayerPage({ session, onBack }) {
 
         {/* INTRO SCREEN */}
         <div
-          className={`absolute inset-0 z-20 flex items-center justify-center px-[6%] transition-opacity duration-[900ms] ease-out ${
-            showIntro ? "opacity-100" : "opacity-0 pointer-events-none"
+          className={`intro-layer absolute inset-0 z-20 flex items-center justify-center px-[6%] ${
+            showIntro ? "intro-in" : "intro-out"
           }`}
           data-testid="intro-screen"
         >
@@ -168,7 +306,7 @@ export default function PlayerPage({ session, onBack }) {
             />
             <div className="flex-1 min-w-0">
               <div
-                className="text-white/70 text-lg md:text-2xl uppercase tracking-[0.35em] mb-4"
+                className="text-white/80 text-lg md:text-2xl uppercase tracking-[0.35em] mb-4"
                 data-testid="intro-artist"
               >
                 {artist}
@@ -186,8 +324,8 @@ export default function PlayerPage({ session, onBack }) {
 
         {/* LYRIC VIEW */}
         <div
-          className={`absolute inset-0 z-10 transition-opacity duration-[900ms] ease-out ${
-            showIntro ? "opacity-0" : "opacity-100"
+          className={`lyric-layer absolute inset-0 z-10 ${
+            showIntro ? "lyric-out" : "lyric-in"
           }`}
           data-testid="lyric-view"
         >
@@ -298,8 +436,41 @@ export default function PlayerPage({ session, onBack }) {
             >
               <Maximize2 className="w-4 h-4" />
             </button>
+            {recording ? (
+              <button
+                onClick={stopRecording}
+                data-testid="stop-record-button"
+                className="h-10 px-4 rounded-full flex items-center gap-2 bg-red-500/90 hover:bg-red-500 text-white text-xs font-semibold transition-colors"
+                title="Stop recording"
+              >
+                <Square className="w-3.5 h-3.5 fill-white" strokeWidth={0} />
+                Stop
+              </button>
+            ) : (
+              <button
+                onClick={startRecording}
+                data-testid="record-button"
+                className="h-10 px-4 rounded-full flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors border border-white/15"
+                title="Record & download as MP4"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Record MP4
+              </button>
+            )}
           </div>
         </div>
+
+        {recording && (
+          <div
+            className="absolute top-6 right-6 z-40 flex items-center gap-2 bg-black/60 backdrop-blur-xl px-3 py-1.5 rounded-full border border-red-500/40"
+            data-testid="recording-indicator"
+          >
+            <Circle className="w-2.5 h-2.5 fill-red-500 text-red-500 rec-dot" strokeWidth={0} />
+            <span className="text-white/90 text-xs font-semibold tracking-wide">
+              REC
+            </span>
+          </div>
+        )}
 
         <audio ref={audioRef} src={audioUrl} data-testid="audio-element" />
       </div>

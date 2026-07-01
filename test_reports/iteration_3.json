@@ -1,0 +1,20 @@
+{
+  "summary": "Iteration 3 — Verified 3 user-requested changes: smooth intro→lyric transition, art-coherent gradient palette, and MP4 record button. All checks pass. Regressions from prior iterations also clean.",
+  "tested_scope": ["frontend", "integration"],
+  "passed": [
+    "TRANSITION: [data-testid=intro-screen] has class 'intro-layer intro-in' initially; [data-testid=lyric-view] has 'lyric-layer lyric-out'. transition-duration=1.3s, transition-property='opacity, transform, filter' on BOTH layers (matches ~1300ms spec).",
+    "TRANSITION active state: after audio plays, intro toggles to 'intro-out' (opacity ~0.006, fading), lyric toggles to 'lyric-in' (opacity ~0.99). Both transform+filter+opacity transitioning together.",
+    "GRADIENT COHERENCE: base linear-gradient uses rgb(231,6,182) [hue 313 magenta], rgb(6,231,182) [hue 167 spring-green], rgb(5,5,185) [hue 240 blue]. These match the art.png formula (r=x, g=y, b=180) corner colors — art literally contains these hues. No neon-random palette detected.",
+    "BLOB ANIMATION: transform matrix on blob elements changes over 1.8s (matrix(1.099..) → matrix(0.902..)), confirming 2500ms movement animation still functional.",
+    "RECORD MP4 BUTTON: [data-testid=record-button] exists, visible, text='Record MP4', not disabled. Clicking triggers navigator.mediaDevices.getDisplayMedia (verified via stub counter __gdmCalled=1). NotAllowedError handled gracefully — no crash, button remains visible.",
+    "REGRESSION bug#2 (font-size consistency): All lyric-line elements (both active and non-active) computed font-size = 96px. Active lyric fontWeight=700 (bold).",
+    "REGRESSION bug#3 (lyric transition-property): lyric-line elements have transitionProperty='transform, opacity, filter, color'.",
+    "FULL FLOW: Upload (artist/song/audio.wav/art.png/sample.lrc) → /play → intro shown → play → active lyric 'First line of the song' at 96px bold appears within 4.5s."
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "not tested (frontend-only per request)", "frontend": "100%"},
+  "retest_needed": false,
+  "notes": "MP4 recording end-to-end intentionally NOT tested (screen-capture permission not grantable in headless Playwright per instructions). Verified only the button presence + getDisplayMedia invocation + graceful failure handling.",
+  "full_testing_deferred": true
+}
