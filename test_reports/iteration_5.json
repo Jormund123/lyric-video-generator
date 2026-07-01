@@ -1,0 +1,21 @@
+{
+  "summary": "Verified recording-order fix in PlayerPage.jsx. Static code review: setAttribute('data-recording','true') happens on line 188, BEFORE getDisplayMedia on line 204; 2x requestAnimationFrame + 120ms setTimeout wait present (lines 195-198); 250ms settle after capture (line 215); revert on cancel (line 277). requestFullscreen no longer called inside startRecording — only remains in the requestFullscreen helper (line 125) used by the fullscreen button (line 484). Runtime test: stubbed navigator.mediaDevices.getDisplayMedia to snapshot DOM state at invocation time. Confirmed at moment of call: data-recording='true', .player-canvas covers full viewport (1365x768 == innerWidth/innerHeight), #emergent-badge computed visibility='hidden'. After NotAllowedError rejection, data-recording attribute correctly removed. Regression: full upload flow + back navigation preserves artist/song/files.",
+  "tested_scope": ["frontend", "integration"],
+  "passed": [
+    "Static: setAttribute('data-recording','true') precedes getDisplayMedia in code",
+    "Static: 2x rAF + 120ms setTimeout present between attribute set and getDisplayMedia",
+    "Static: 250ms settle delay after getDisplayMedia",
+    "Static: requestFullscreen() NOT called inside startRecording (only in fullscreen helper)",
+    "Runtime: data-recording='true' at moment getDisplayMedia called",
+    "Runtime: .player-canvas 1365x768 == window innerWidth/innerHeight at call time (canvas expanded to full viewport)",
+    "Runtime: #emergent-badge computed style visibility=hidden at call time",
+    "Runtime: data-recording attribute removed after user cancel (NotAllowedError)",
+    "Regression: full upload → player launch → back navigation preserves artist/song fields"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Real getDisplayMedia flow not exercised (requires browser tab-picker UI); stub confirms ordering guarantees. badgeDisplay=flex is expected because CSS uses visibility:hidden (not display:none) — badge is still in layout but invisible, sufficient for capture."
+}

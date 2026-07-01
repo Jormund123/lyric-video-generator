@@ -172,24 +172,48 @@ export default function PlayerPage({ session, onBack }) {
       toast.error("Recording not supported in this browser. Try Chrome/Edge.");
       return;
     }
+    const a = audioRef.current;
+    let uiApplied = false;
     try {
-      // Start audio from beginning + play
-      const a = audioRef.current;
       a.currentTime = 0;
       const dest = ensureAudioCapture();
       if (!dest) {
         toast.error("Audio capture not available");
         return;
       }
-      toast.info("Choose the browser tab showing this player to record", {
-        duration: 4000,
-      });
+
+      // STEP 1: Apply recording layout FIRST so the tab visually shows only
+      // the lyric canvas (watermark, controls, badges hidden; canvas fills
+      // 100vw x 100vh) BEFORE the capture stream starts sampling frames.
+      document.body.setAttribute("data-recording", "true");
+      uiApplied = true;
+      const prevTitle = document.title;
+      document.title = `● REC — ${song || "Lyric Video"}`;
+
+      // Wait 2 animation frames + a short paint delay so the browser has
+      // definitely committed the layout change before we open the picker.
+      await new Promise((r) =>
+        requestAnimationFrame(() => requestAnimationFrame(r)),
+      );
+      await new Promise((r) => setTimeout(r, 120));
+
+      toast.info("Choose 'This tab' when prompted", { duration: 3500 });
+
+      // STEP 2: Now request tab capture — the picker preview and the first
+      // captured frames will show the already-transformed layout.
       const display = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: 60 },
         audio: false,
         preferCurrentTab: true,
+        selfBrowserSurface: "include",
+        surfaceSwitching: "exclude",
       });
       displayStreamRef.current = display;
+
+      // Small settle delay to make sure the capture is producing frames of
+      // the recording layout (not any transient picker state).
+      await new Promise((r) => setTimeout(r, 250));
+
       const combined = new MediaStream([
         ...display.getVideoTracks(),
         ...dest.stream.getAudioTracks(),
@@ -226,9 +250,6 @@ export default function PlayerPage({ session, onBack }) {
         if (recorderRef.current?._prevTitle) {
           document.title = recorderRef.current._prevTitle;
         }
-        if (document.fullscreenElement) {
-          document.exitFullscreen?.().catch(() => {});
-        }
         toast.success(`Downloaded as .${ext}`);
       };
       // If user stops sharing from browser UI
@@ -242,27 +263,20 @@ export default function PlayerPage({ session, onBack }) {
       };
       a.addEventListener("ended", onEnded);
       recorderRef.current = rec;
+      recorderRef.current._prevTitle = prevTitle;
       rec.start(200);
       setRecording(true);
-      // Hide watermark / controls / rec badge; set REC in tab title
-      document.body.setAttribute("data-recording", "true");
-      const prevTitle = document.title;
-      document.title = `● REC — ${song || "Lyric Video"}`;
-      recorderRef.current._prevTitle = prevTitle;
-      // Enter fullscreen so nothing else is visible around canvas
-      try {
-        if (!document.fullscreenElement && canvasRef.current?.requestFullscreen) {
-          await canvasRef.current.requestFullscreen();
-        }
-      } catch (_) {
-        /* fullscreen may be blocked; recording still works */
-      }
       await a.play();
       toast.success("Recording... press ESC (or stop-share) to finish", {
         duration: 4500,
       });
     } catch (err) {
       console.error(err);
+      // Revert UI on failure/cancel
+      if (uiApplied) {
+        document.body.removeAttribute("data-recording");
+        document.title = "Emergent | Fullstack App";
+      }
       if (err?.name !== "NotAllowedError") {
         toast.error("Could not start recording");
       }
@@ -301,7 +315,6 @@ export default function PlayerPage({ session, onBack }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recording]);
 
   const showIntro = activeIndex < 0;
