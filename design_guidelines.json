@@ -1,0 +1,76 @@
+{
+  "theme": "dark",
+  "archetype": "5",
+  "colors": {
+    "background": "#000000",
+    "text_primary": "#FFFFFF",
+    "text_dimmed": "rgba(255, 255, 255, 0.4)",
+    "surface_glass": "rgba(255, 255, 255, 0.05)",
+    "border_glass": "rgba(255, 255, 255, 0.1)"
+  },
+  "typography": {
+    "font_family": "Helvetica, Arial, sans-serif",
+    "tracking": "tracking-tight",
+    "heading_sizes": {
+      "lyrics_active": "text-6xl sm:text-7xl md:text-8xl",
+      "lyrics_inactive": "text-4xl sm:text-5xl md:text-6xl",
+      "title": "text-5xl md:text-7xl",
+      "artist": "text-2xl md:text-4xl"
+    },
+    "weights": {
+      "active": "font-bold",
+      "inactive": "font-semibold"
+    }
+  },
+  "layout": {
+    "global": "bg-black min-h-screen text-white selection:bg-white/30",
+    "upload_page": "min-h-screen flex flex-col items-center justify-center p-4 md:p-8 relative z-10",
+    "player_wrapper": "w-full h-screen bg-black flex items-center justify-center overflow-hidden",
+    "player_canvas": "w-full max-w-[1920px] aspect-video relative overflow-hidden bg-black shadow-2xl rounded-none md:rounded-2xl ring-1 ring-white/10"
+  },
+  "motion": {
+    "mesh_blobs": "Keyframe animations moving 4-5 blurred colored orbs across the container in figure-8 or elliptical paths (duration 15s-30s, infinite, alternate).",
+    "lyrics_scroll": "Smooth scroll utilizing containerRef.scrollTo({ top: ..., behavior: 'smooth' }).",
+    "lyrics_transition": "transition-all duration-700 ease-out",
+    "intro_fade": "transition-opacity duration-1000 ease-in-out"
+  },
+  "components": {
+    "mesh_background": "Absolute inset-0 z-0 overflow-hidden. Contains 4-5 div elements sized w-[60vw] h-[60vw] rounded-full blur-[120px] opacity-70 mix-blend-screen. Colors fed dynamically from album art extraction. Add a static SVG noise overlay on top at 20% opacity to prevent banding.",
+    "intro_screen": "Absolute inset-0 z-20 flex flex-col items-center justify-center gap-8. Album art at w-64 h-64 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)].",
+    "lyric_container": "Absolute inset-0 z-10 w-full max-w-6xl mx-auto flex flex-col py-[40vh] px-12 overflow-y-auto no-scrollbar gap-10 mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+    "lyric_line": "Origin-left cursor-pointer break-words leading-tight",
+    "lyric_active": "opacity-100 scale-100 text-white drop-shadow-lg",
+    "lyric_inactive": "opacity-40 scale-[0.95] text-white/70 blur-[1px]",
+    "upload_form": "backdrop-blur-2xl bg-white/5 border border-white/10 rounded-3xl p-8 md:p-12 w-full max-w-2xl flex flex-col gap-8 shadow-2xl",
+    "controls": "Absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-6 bg-black/40 backdrop-blur-xl px-8 py-4 rounded-full border border-white/10 opacity-0 hover:opacity-100 transition-opacity duration-300"
+  },
+  "features": {
+    "color_extraction": "Implement a simple canvas-based average color extractor or use `colorthief` (if added by main agent) to pull 4 distinct colors from the uploaded album art.",
+    "lrc_parsing": "Parse LRC text by splitting newlines and using regex `\\[(\\d{2}):(\\d{2})\\.(\\d{2,3})\\](.*)` to generate an array of objects `{ time: seconds, text: string }`. Ensure empty lines are rendered as breaks.",
+    "audio_sync": "Use standard HTML5 Audio. On `timeupdate`, find the last lyric whose time is <= currentTime. Set as active. Auto-scroll container so active lyric is centered.",
+    "intro_logic": "If currentTime < firstLyric.time, show `intro_screen` and hide `lyric_container`. When reached, crossfade them."
+  },
+  "data_testid": {
+    "upload_input_audio": "upload-audio",
+    "upload_input_art": "upload-art",
+    "upload_input_lrc": "upload-lrc",
+    "upload_input_artist": "upload-artist",
+    "upload_input_song": "upload-song",
+    "upload_submit": "upload-submit",
+    "play_button": "play-button",
+    "pause_button": "pause-button",
+    "lyric_line": "lyric-line",
+    "lyric_active": "lyric-line-active"
+  },
+  "instructions_to_main_agent": [
+    "DO NOT use Shadcn UI cards for the player interface. Keep it bare HTML/Tailwind for maximum performance and layout control.",
+    "To achieve the Mesh Gradient: use standard absolutely positioned divs with inline style background-color set from the extracted album art colors. Apply `filter: blur(140px)` and CSS animations to translate/scale them. Overlay a subtle noise texture to eliminate color banding.",
+    "Ensure the layout strictly enforces a 1920x1080 aspect ratio in the center of the screen via `aspect-video`, mimicking a TV display.",
+    "For the LRC parsing, remember some LRC files have 2 digits for milliseconds and some have 3. Handle both.",
+    "Implement the 'Apple Music Sing' scroll: When active lyric changes, calculate `offsetTop` of the active HTML element, and call `containerRef.current.scrollTo({ top: offsetTop - containerHeight / 2 + elementHeight / 2, behavior: 'smooth' })`.",
+    "Ensure `mask-image` (or `-webkit-mask-image`) is used on the lyric container to seamlessly fade out lyrics at the top and bottom of the screen.",
+    "Use standard HTML input elements for the upload form, styled heavily with Tailwind glassmorphism (`bg-white/5 backdrop-blur-xl border border-white/10`).",
+    "Do not implement persistence. Use React State to hold the uploaded files (URL.createObjectURL for MP3 and Image, FileReader for LRC text) and pass them to the Player component.",
+    "Use Helvetica strictly for the player text (`font-family: Helvetica, Arial, sans-serif`). Do not use Inter for lyrics."
+  ]
+}
