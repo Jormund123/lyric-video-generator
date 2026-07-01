@@ -1,0 +1,24 @@
+{
+  "summary": "Verified BUG A (UI hidden during recording) and BUG B (form persistence on back nav, cleared on reload). All 14 assertions passed.",
+  "tested_scope": ["frontend", "integration"],
+  "passed": [
+    "Upload page loaded",
+    "File tiles show filenames pre-launch",
+    "PlayerPage rendered after Launch",
+    "player-shell/player-canvas/player-controls classes present",
+    "CSS rules for body[data-recording='true'] hide #emergent-badge and make .player-canvas fill 100vw viewport",
+    "record-button visible before recording",
+    "emergent-badge visible before recording (display:flex, visibility:visible)",
+    "During recording (body[data-recording=true]): emergent-badge becomes visibility:hidden opacity:0; .player-controls display:none; .player-canvas border-radius:0px, box-shadow:none, width fills viewport",
+    "After removing data-recording attr: controls restored (display:block, visibility:visible)",
+    "BUG B: After clicking back-button, artist='Persist Test', song='Should Stay', all 3 file tiles show original filenames (audio.wav, art.png, sample.lrc)",
+    "Re-launch works without re-uploading files (session preserved)",
+    "BUG B: Form cleared after full page reload (artist empty, tiles show 'Click to select')"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Recording UI-hide simulated by setting document.body[data-recording=true] via page.evaluate (per instructions, did not invoke getDisplayMedia). CSS rules from App.css verified via computed styles."
+}

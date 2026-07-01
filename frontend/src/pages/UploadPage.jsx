@@ -38,12 +38,12 @@ const FileTile = ({ id, label, accept, file, onPick, icon: Icon, testId }) => {
   );
 };
 
-export default function UploadPage({ onStart }) {
-  const [artist, setArtist] = useState("");
-  const [song, setSong] = useState("");
-  const [audio, setAudio] = useState(null);
-  const [art, setArt] = useState(null);
-  const [lrc, setLrc] = useState(null);
+export default function UploadPage({ onStart, initialForm }) {
+  const [artist, setArtist] = useState(initialForm?.artist || "");
+  const [song, setSong] = useState(initialForm?.song || "");
+  const [audio, setAudio] = useState(initialForm?.audio || null);
+  const [art, setArt] = useState(initialForm?.art || null);
+  const [lrc, setLrc] = useState(initialForm?.lrc || null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -67,13 +67,16 @@ export default function UploadPage({ onStart }) {
       }
       const audioUrl = URL.createObjectURL(audio);
       const artUrl = URL.createObjectURL(art);
-      onStart({
-        artist: artist.trim(),
-        song: song.trim(),
-        audioUrl,
-        artUrl,
-        lyrics,
-      });
+      onStart(
+        {
+          artist: artist.trim(),
+          song: song.trim(),
+          audioUrl,
+          artUrl,
+          lyrics,
+        },
+        { artist, song, audio, art, lrc },
+      );
     } catch (err) {
       console.error(err);
       toast.error("Failed to parse LRC file");

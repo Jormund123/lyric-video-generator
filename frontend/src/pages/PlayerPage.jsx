@@ -221,6 +221,14 @@ export default function PlayerPage({ session, onBack }) {
         display.getTracks().forEach((t) => t.stop());
         displayStreamRef.current = null;
         setRecording(false);
+        // Restore UI state
+        document.body.removeAttribute("data-recording");
+        if (recorderRef.current?._prevTitle) {
+          document.title = recorderRef.current._prevTitle;
+        }
+        if (document.fullscreenElement) {
+          document.exitFullscreen?.().catch(() => {});
+        }
         toast.success(`Downloaded as .${ext}`);
       };
       // If user stops sharing from browser UI
@@ -236,8 +244,23 @@ export default function PlayerPage({ session, onBack }) {
       recorderRef.current = rec;
       rec.start(200);
       setRecording(true);
+      // Hide watermark / controls / rec badge; set REC in tab title
+      document.body.setAttribute("data-recording", "true");
+      const prevTitle = document.title;
+      document.title = `● REC — ${song || "Lyric Video"}`;
+      recorderRef.current._prevTitle = prevTitle;
+      // Enter fullscreen so nothing else is visible around canvas
+      try {
+        if (!document.fullscreenElement && canvasRef.current?.requestFullscreen) {
+          await canvasRef.current.requestFullscreen();
+        }
+      } catch (_) {
+        /* fullscreen may be blocked; recording still works */
+      }
       await a.play();
-      toast.success("Recording... play through until the song ends");
+      toast.success("Recording... press ESC (or stop-share) to finish", {
+        duration: 4500,
+      });
     } catch (err) {
       console.error(err);
       if (err?.name !== "NotAllowedError") {
@@ -263,8 +286,23 @@ export default function PlayerPage({ session, onBack }) {
       if (audioCtxRef.current) {
         audioCtxRef.current.close().catch(() => {});
       }
+      document.body.removeAttribute("data-recording");
     };
   }, []);
+
+  // Keyboard shortcut: Esc stops the recording (UI is hidden during recording)
+  useEffect(() => {
+    if (!recording) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        stopRecording();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recording]);
 
   const showIntro = activeIndex < 0;
 
@@ -277,14 +315,14 @@ export default function PlayerPage({ session, onBack }) {
 
   return (
     <div
-      className="w-full min-h-screen bg-black flex flex-col items-center justify-center p-0 md:p-6 font-helvetica"
+      className="player-shell w-full min-h-screen bg-black flex flex-col items-center justify-center p-0 md:p-6 font-helvetica"
       onMouseMove={() => setShowControls(true)}
       data-testid="player-page"
     >
       {/* 1920x1080 canvas */}
       <div
         ref={canvasRef}
-        className="relative w-full max-w-[1920px] aspect-video overflow-hidden bg-black md:rounded-3xl ring-1 ring-white/10 shadow-[0_40px_120px_rgba(0,0,0,0.7)]"
+        className="player-canvas relative w-full max-w-[1920px] aspect-video overflow-hidden bg-black md:rounded-3xl ring-1 ring-white/10 shadow-[0_40px_120px_rgba(0,0,0,0.7)]"
         data-testid="player-canvas"
       >
         {/* Mesh gradient bg */}
@@ -386,7 +424,7 @@ export default function PlayerPage({ session, onBack }) {
 
         {/* CONTROLS */}
         <div
-          className={`absolute bottom-6 left-1/2 -translate-x-1/2 z-30 transition-opacity duration-500 ${
+          className={`player-controls absolute bottom-6 left-1/2 -translate-x-1/2 z-30 transition-opacity duration-500 ${
             showControls ? "opacity-100" : "opacity-0"
           }`}
         >
@@ -462,7 +500,7 @@ export default function PlayerPage({ session, onBack }) {
 
         {recording && (
           <div
-            className="absolute top-6 right-6 z-40 flex items-center gap-2 bg-black/60 backdrop-blur-xl px-3 py-1.5 rounded-full border border-red-500/40"
+            className="recording-indicator absolute top-6 right-6 z-40 flex items-center gap-2 bg-black/60 backdrop-blur-xl px-3 py-1.5 rounded-full border border-red-500/40"
             data-testid="recording-indicator"
           >
             <Circle className="w-2.5 h-2.5 fill-red-500 text-red-500 rec-dot" strokeWidth={0} />

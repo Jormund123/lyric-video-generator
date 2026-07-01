@@ -170,18 +170,37 @@
     pointer-events: none;
 }
 
-/* Recording badge pulse */
-@keyframes rec-pulse {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.35;
-    }
+/* When recording, hide EVERYTHING except the player canvas visuals
+   (no watermark, no controls, no REC badge, no chrome) */
+body[data-recording="true"] #emergent-badge,
+body[data-recording="true"] [id*="emergent-badge"],
+body[data-recording="true"] .player-controls,
+body[data-recording="true"] .recording-indicator,
+body[data-recording="true"] [data-sonner-toaster],
+body[data-recording="true"] [data-testid="recording-indicator"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
-.rec-dot {
-    animation: rec-pulse 1.4s ease-in-out infinite;
+
+/* Make the player canvas span the full viewport during recording so
+   only lyrics + gradient are captured — no rounded corners, no ring,
+   no side padding */
+body[data-recording="true"] {
+    background: #000 !important;
+}
+body[data-recording="true"] .player-shell {
+    padding: 0 !important;
+}
+body[data-recording="true"] .player-canvas {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    --tw-ring-shadow: 0 0 !important;
 }
 
 .blob-1 {
