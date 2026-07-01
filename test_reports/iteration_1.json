@@ -1,0 +1,23 @@
+{
+  "summary": "Full frontend flow tested end-to-end. Upload page loads, empty submit shows toast and stays on page, filling all 5 fields navigates to /play, intro screen shows album art + artist + song, mesh gradient renders with 8 blobs, play button starts playback, at ~3s active lyric 'First line of the song' appears at 96px / weight 700 with dimmer surrounding lyrics (Apple Music karaoke style), pause toggles, progress bar + fullscreen + back button all present and functional. Back returns to upload page. Zero blockers.",
+  "tested_scope": ["frontend", "integration"],
+  "passed": [
+    "Upload page loads with upload-form and all inputs (artist, song, audio, art, lrc)",
+    "Empty submit shows toast 'Please enter both artist name and song name' and remains on upload page",
+    "set_input_files on hidden inputs works for audio.wav, art.png, sample.lrc",
+    "Launch Player navigates to /play and renders player-canvas",
+    "Intro screen visible with intro-artist='Test Artist', intro-song='Test Song', album art thumbnail displayed",
+    "mesh-gradient element renders with 8 animated blob children",
+    "play-button click starts audio; after ~4s intro fades and lyric-view appears",
+    "lyric-line-active shows 'First line of the song' with fontSize=96px, fontWeight=700; surrounding lyrics dimmer",
+    "pause-button appears while playing and toggles back to play-button",
+    "progress-bar visible in controls (0:04 / 0:30 shown)",
+    "fullscreen-button present",
+    "back-button returns to upload page (upload-form re-rendered)"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "n/a (not tested; session-only app)", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true
+}

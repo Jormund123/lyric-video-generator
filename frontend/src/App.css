@@ -1,34 +1,128 @@
-.App-logo {
-    height: 40vmin;
+/* Player fonts */
+.font-helvetica {
+    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Hide scrollbar for lyrics container */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Lyric container fade mask (top & bottom) */
+.lyric-mask {
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 18%,
+        black 82%,
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 18%,
+        black 82%,
+        transparent 100%
+    );
+}
+
+/* Mesh blob keyframes */
+@keyframes blob-drift-1 {
+    0% {
+        transform: translate(-20%, -10%) scale(1);
+    }
+    50% {
+        transform: translate(30%, 20%) scale(1.25);
+    }
+    100% {
+        transform: translate(-20%, -10%) scale(1);
+    }
+}
+@keyframes blob-drift-2 {
+    0% {
+        transform: translate(30%, -30%) scale(1.1);
+    }
+    50% {
+        transform: translate(-25%, 25%) scale(0.9);
+    }
+    100% {
+        transform: translate(30%, -30%) scale(1.1);
+    }
+}
+@keyframes blob-drift-3 {
+    0% {
+        transform: translate(20%, 40%) scale(0.95);
+    }
+    50% {
+        transform: translate(-30%, -20%) scale(1.2);
+    }
+    100% {
+        transform: translate(20%, 40%) scale(0.95);
+    }
+}
+@keyframes blob-drift-4 {
+    0% {
+        transform: translate(-30%, 30%) scale(1.15);
+    }
+    50% {
+        transform: translate(35%, -25%) scale(0.85);
+    }
+    100% {
+        transform: translate(-30%, 30%) scale(1.15);
+    }
+}
+@keyframes blob-drift-5 {
+    0% {
+        transform: translate(10%, -35%) scale(1);
+    }
+    50% {
+        transform: translate(-15%, 30%) scale(1.3);
+    }
+    100% {
+        transform: translate(10%, -35%) scale(1);
+    }
+}
+
+.blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(120px);
+    mix-blend-mode: screen;
+    opacity: 0.85;
+    will-change: transform;
+}
+
+.blob-1 {
+    animation: blob-drift-1 22s ease-in-out infinite;
+}
+.blob-2 {
+    animation: blob-drift-2 28s ease-in-out infinite;
+}
+.blob-3 {
+    animation: blob-drift-3 25s ease-in-out infinite;
+}
+.blob-4 {
+    animation: blob-drift-4 30s ease-in-out infinite;
+}
+.blob-5 {
+    animation: blob-drift-5 26s ease-in-out infinite;
+}
+
+/* Grain / noise overlay */
+.grain {
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.35 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-size: 200px 200px;
+    opacity: 0.18;
+    mix-blend-mode: overlay;
     pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
-}
-
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
-}
-
-.App-link {
-    color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Custom file input styling */
+.file-input::-webkit-file-upload-button {
+    visibility: hidden;
+    display: none;
 }
